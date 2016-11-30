@@ -8,11 +8,9 @@ import (
 )
 
 type Result struct {
-	Zone         string     `json:"zone"`
-	Municipality string     `json:"municipality"`
-	Area         string     `json:"area"`
-	Today        []Forecast `json:"today"`
-	Tomorrow     []Forecast `json:"tomorrow"`
+	Area
+	Today    []Forecast `json:"today"`
+	Tomorrow []Forecast `json:"tomorrow"`
 }
 
 type Forecast struct {
