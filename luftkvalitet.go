@@ -71,7 +71,30 @@ type Aqi struct {
 }
 
 func GetMeasurements(f Filter) ([]Measurement, error) {
-	u := endpoint + url.QueryEscape("aq/utd.json?")
+	u := endpoint + url.QueryEscape("aq/utd.json")
+
+	u = addFilter(u, f)
+
+	resp, err := http.Get(u)
+
+	if err != nil {
+		return []Measurement{}, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var measurements []Measurement
+	err = json.Unmarshal(body, &measurements)
+	if err != nil {
+		return []Measurement{}, err
+	}
+
+	return measurements, nil
+
+}
+
+func addFilter(u string, f Filter) string {
+	u = u + url.QueryEscape("?")
 
 	if len(f.Areas) > 0 {
 		query := url.QueryEscape("areas=" + strings.Join(f.Areas, ";"))
@@ -90,39 +113,25 @@ func GetMeasurements(f Filter) ([]Measurement, error) {
 	}
 
 	if f.Within.Latitude != 0 && f.Within.Longitude != 0 && f.Within.Radius != 0 {
-		lat := strconv.FormatFloat(f.Within.Latitude, 'E', -1, 64)
-		long := strconv.FormatFloat(f.Within.Longitude, 'E', -1, 64)
-		radius := strconv.FormatFloat(f.Within.Radius, 'E', -1, 64)
+		lat := strconv.FormatFloat(f.Within.Latitude, 'f', -1, 64)
+		long := strconv.FormatFloat(f.Within.Longitude, 'f', -1, 64)
+		radius := strconv.FormatFloat(f.Within.Radius, 'f', -1, 64)
 
 		query := url.QueryEscape("&within=" + strings.Join([]string{lat, long, radius}, ";"))
 		u = u + query
 	}
 
 	if f.Nearest.Latitude != 0 && f.Nearest.Longitude != 0 && f.Nearest.Radius != 0 {
-		lat := strconv.FormatFloat(f.Nearest.Latitude, 'E', -1, 64)
-		long := strconv.FormatFloat(f.Nearest.Longitude, 'E', -1, 64)
-		radius := strconv.FormatFloat(f.Nearest.Radius, 'E', -1, 64)
+		lat := strconv.FormatFloat(f.Nearest.Latitude, 'f', -1, 64)
+		long := strconv.FormatFloat(f.Nearest.Longitude, 'f', -1, 64)
+		radius := strconv.FormatFloat(f.Nearest.Radius, 'f', -1, 64)
 
 		query := url.QueryEscape("&nearest=" + strings.Join([]string{lat, long, radius}, ";"))
 		u = u + query
+
 	}
 
-	resp, err := http.Get(u)
-
-	if err != nil {
-		return []Measurement{}, err
-	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var measurements []Measurement
-	err = json.Unmarshal(body, &measurements)
-	if err != nil {
-		return []Measurement{}, err
-	}
-
-	return measurements, nil
-
+	return u
 }
 
 func GetAreas() ([]Area, error) {

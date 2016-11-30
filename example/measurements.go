@@ -57,7 +57,7 @@ func main() {
 
 	fmt.Println(m)
 
-	nearest := luftkvalitet.Point{Location: luftkvalitet.Location{Latitude: 69.667081, Longitude: 18.9595023}, Radius: 2}
+	nearest := luftkvalitet.Point{Location: luftkvalitet.Location{Latitude: 69.667081, Longitude: 18.9595023}, Radius: 10}
 	m, err = luftkvalitet.GetMeasurements(luftkvalitet.Filter{
 		Nearest: nearest})
 	if err != nil {
