@@ -32,8 +32,8 @@ func GetForecasts(areas []string) ([]Result, error) {
 
 func getForecasts(areas []string) ([]Result, error) {
 	url := endpoint + "aq/forecast.json"
-	if len(areas) > 1 {
-		url = url + "+" + strings.Join(areas, "")
+	if len(areas) > 0 {
+		url = url + "?area=" + strings.Join(areas, ";")
 	}
 
 	resp, err := http.Get(url)

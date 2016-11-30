@@ -17,4 +17,11 @@ func main() {
 		return
 	}
 	fmt.Println(berg1)
+
+	berg1tromso, err := luftkvalitet.GetForecasts([]string{"Bergen", "Tromsø"})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(berg1tromso)
 }
