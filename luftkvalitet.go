@@ -54,6 +54,22 @@ type Filter struct {
 	Nearest    Point
 }
 
+type AqiResult struct {
+	Component string `json:"component"`
+	Unit      string `json:"unit"`
+	Aqis      []Aqi  `json:"aqis"`
+}
+
+type Aqi struct {
+	Index            int     `json:"index"`
+	FromValue        float64 `json:"fromValue"`
+	ToValue          float64 `json:"toValue"`
+	Color            string  `json:"color"`
+	Text             string  `json:"text"`
+	ShortDescription string  `json:"shortDescription"`
+	Description      string  `json:"description"`
+}
+
 func GetMeasurements(f Filter) ([]Measurement, error) {
 	u := endpoint + url.QueryEscape("aq/utd.json?")
 
@@ -146,4 +162,24 @@ func GetStations() ([]Station, error) {
 	}
 
 	return stations, nil
+}
+
+func GetAqis() ([]AqiResult, error) {
+	u := endpoint + "lookup/aqis"
+	resp, err := http.Get(u)
+
+	if err != nil {
+		return []AqiResult{}, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var results []AqiResult
+	err = json.Unmarshal(body, &results)
+	if err != nil {
+		return []AqiResult{}, err
+	}
+
+	return results, nil
+
 }
