@@ -1,125 +1,91 @@
 package luftkvalitet
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
-	"github.com/pkg/errors"
+	"time"
 )
 
+var endpoint = "https://api.nilu.no/"
+
 type Measurement struct {
-	Location     string
-	Component    string
-	Time         string
-	Value        string
-	Date         string
-	DailyAverage string
-	Unit         string
+	Zone         string    `json:"zone"`
+	Municipality string    `json:"municipality"`
+	Area         string    `json:"area"`
+	Station      string    `json:"station"`
+	Eoi          string    `json:"eoi"`
+	Component    string    `json:"component"`
+	FromTime     time.Time `json:"fromTime"`
+	ToTime       time.Time `json:"toTime"`
+	Value        float64   `json:"value"`
+	Unit         string    `json:"unit"`
+	Index        int       `json:"index"`
+	Color        string    `json:"color"`
+	Latitude     float64   `json:"latitude"`
+	Longitude    float64   `json:"longitude"`
 }
 
-type Aqi struct {
-	Name             string
-	Index            int
-	Color            string
-	Text             string
-	ShortDescription string
-	Description      string
-	Lat              float64
-	Lon              float64
-	Url              string
-	Type             int
+type Point struct {
+	Lat    string
+	Long   string
+	Radius string
 }
 
-type AqiRequest struct {
-	Culture string `json:"culture"`
-	Type    string `json:"type"`
-	Id      string `json:"id"`
+type Filter struct {
+	Areas      []string
+	Stations   []string
+	Components []string
+	Within     Point
+	Nearest    Point
 }
 
-type AqiResponse struct {
-	D AqiData `json:"d"`
-}
+func GetMeasurements(f Filter) ([]Measurement, error) {
+	u := endpoint + url.QueryEscape("aq/utd.json?")
 
-type AqiData struct {
-	UnkownType string `json:"__type"`
-	Type       string
-	Aqis       []Aqi
-}
-
-func GetAqis(id string) ([]Aqi, error) {
-	url := "http://luftkvalitet.info/Nilu/Webservice/CityService.asmx/GetAqis"
-
-	ar := AqiRequest{"no", "1", id}
-	b, err := json.Marshal(ar)
-	if err != nil {
-		return []Aqi{}, err
+	if len(f.Areas) > 0 {
+		query := url.QueryEscape("areas=" + strings.Join(f.Areas, ";"))
+		u = u + query
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
-	req.Header.Set("Content-Type", "application/json")
+	if len(f.Stations) > 0 {
+		query := url.QueryEscape("&stations=" + strings.Join(f.Stations, ";"))
+		u = u + query
+	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	if len(f.Components) > 0 {
+		query := url.QueryEscape("&components=" + strings.Join(f.Components,
+			";"))
+		u = u + query
+	}
+
+	if f.Within.Lat != "" && f.Within.Long != "" && f.Within.Radius != "" {
+		query := url.QueryEscape("&within=" +
+			strings.Join([]string{f.Within.Lat, f.Within.Long, f.Within.Radius},
+				";"))
+		u = u + query
+	}
+
+	if f.Nearest.Lat != "" && f.Nearest.Long != "" && f.Nearest.Radius != "" {
+		query := url.QueryEscape("&nearest=" + strings.Join([]string{f.Nearest.Lat, f.Nearest.Long, f.Nearest.Radius}, ";"))
+		u = u + query
+	}
+
+	resp, err := http.Get(u)
+
 	if err != nil {
-		return []Aqi{}, err
+		return []Measurement{}, err
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	aqiResponse := AqiResponse{}
 
-	err = json.Unmarshal(body, &aqiResponse)
+	var measurements []Measurement
+	err = json.Unmarshal(body, &measurements)
 	if err != nil {
-		return []Aqi{}, err
+		return []Measurement{}, err
 	}
-
-	return aqiResponse.D.Aqis, nil
-}
-
-func GetMeasurements(location string) ([]Measurement, error) {
-
-	resp, err := http.Get("http://luftkvalitet.info/home/overview.aspx?type=Station&id={" + location + "}")
-
-	doc, err := goquery.NewDocumentFromResponse(resp)
-	if err != nil {
-		return []Measurement{}, errors.Wrap(err, "Could not parse luftkvalitet.info")
-	}
-
-	measurements := []Measurement{}
-
-	doc.Find("table#ctl00_cph_Map_ctl00_gwStation").Each(func(i int, s *goquery.Selection) {
-		s.Find("tr").Each(func(i int, s *goquery.Selection) {
-			if s.HasClass("tableHead") {
-				return
-			} else {
-				measurement := Measurement{}
-				measurement.Location = doc.Find("#ctl00_cph_Text_ctl00_lTitle").Text()
-				s.Find("td").Each(func(i int, s *goquery.Selection) {
-					text := s.Text()
-					text = strings.TrimSpace(text)
-					switch i {
-					case 0:
-						measurement.Component = text
-					case 1:
-						measurement.Time = text
-					case 2:
-						measurement.Value = text
-					case 3:
-						measurement.Date = text
-					case 4:
-						measurement.DailyAverage = text
-					case 5:
-						measurement.Unit = text
-					}
-				})
-				measurements = append(measurements, measurement)
-			}
-		})
-
-	})
 
 	return measurements, nil
 
