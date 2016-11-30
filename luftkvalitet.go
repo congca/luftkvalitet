@@ -183,3 +183,31 @@ func GetAqis() ([]AqiResult, error) {
 	return results, nil
 
 }
+
+func GetComponents() ([]string, error) {
+	u := endpoint + "lookup/components"
+	resp, err := http.Get(u)
+
+	if err != nil {
+		return []string{}, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var results []struct {
+		Component string `json:"component"`
+	}
+
+	err = json.Unmarshal(body, &results)
+	if err != nil {
+		return []string{}, err
+	}
+
+	var components []string
+	for _, r := range results {
+		components = append(components, r.Component)
+	}
+
+	return components, nil
+
+}
