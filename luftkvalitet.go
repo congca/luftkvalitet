@@ -52,6 +52,8 @@ type Filter struct {
 	Components []string
 	Within     Point
 	Nearest    Point
+	FromTime   time.Time
+	ToTime     time.Time
 }
 
 type AqiResult struct {
@@ -129,6 +131,14 @@ func addFilter(u string, f Filter) string {
 		query := url.QueryEscape("&nearest=" + strings.Join([]string{lat, long, radius}, ";"))
 		u = u + query
 
+	}
+
+	if !f.FromTime.IsZero() && !f.ToTime.IsZero() {
+		layout := "2006.01.02 15:04"
+		fromTime := f.FromTime.Format(layout)
+		toTime := f.ToTime.Format(layout)
+		query := url.QueryEscape("&fromtime=" + fromTime + "&totime=" + toTime)
+		u = u + query
 	}
 
 	return u
