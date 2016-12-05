@@ -5,7 +5,8 @@ available areas, components, stations and aqis; and air quality forecasts.
 
 
 # Example
-For more examples have a look in [example/](example).
+For more examples have a look at [gonum-plot-example](https://github.com/fjukstad/gonum-plot-example),
+[polluteman](https://github.com/fjukstad/polluteman) or in [example/](example).
 
 Get current air quality measurements from Tromsø: 
 
