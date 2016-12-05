@@ -4,15 +4,12 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type Result struct {
-	Zone         string     `json:"zone"`
-	Municipality string     `json:"municipality"`
-	Area         string     `json:"area"`
-	Today        []Forecast `json:"today"`
-	Tomorrow     []Forecast `json:"tomorrow"`
+	Area
+	Today    []Forecast `json:"today"`
+	Tomorrow []Forecast `json:"tomorrow"`
 }
 
 type Forecast struct {
@@ -22,19 +19,10 @@ type Forecast struct {
 	TimeOfDay    int    `json:"timeOfDay"`
 }
 
-func GetAllForecasts() ([]Result, error) {
-	return getForecasts([]string{})
-}
-
-func GetForecasts(areas []string) ([]Result, error) {
-	return getForecasts(areas)
-}
-
-func getForecasts(areas []string) ([]Result, error) {
+func GetForecasts(f Filter) ([]Result, error) {
 	url := endpoint + "aq/forecast.json"
-	if len(areas) > 0 {
-		url = url + "?area=" + strings.Join(areas, ";")
-	}
+
+	url = addFilter(url, f)
 
 	resp, err := http.Get(url)
 
