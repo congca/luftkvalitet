@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type HistoricalResult struct {
@@ -31,7 +33,7 @@ func GetHistorical(f Filter) ([]HistoricalResult, error) {
 	var results []HistoricalResult
 	err = json.Unmarshal(body, &results)
 	if err != nil {
-		return []HistoricalResult{}, err
+		return []HistoricalResult{}, errors.Wrap(err, "Could not unmarshal historical data")
 	}
 
 	return results, nil
